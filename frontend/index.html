@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#f7f8f5">
+<title>Nghe Tiếng Hàn – Luyện nghe YouTube</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="top">
+  <a class="logo" href="#listen" aria-label="Nghe Tiếng Hàn, trang luyện nghe">
+    <svg class="mark" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="21" r="12" fill="#f2c66d"/><circle cx="16" cy="20" r="1.6" fill="#263b32"/><circle cx="24" cy="20" r="1.6" fill="#263b32"/><path d="M16 25q4 3 8 0" stroke="#263b32" stroke-width="1.6" fill="none" stroke-linecap="round"/><path d="M6 21a14 14 0 0 1 28 0" stroke="#527866" stroke-width="3" fill="none"/><rect x="3" y="19" width="6" height="10" rx="3" fill="#527866"/><rect x="31" y="19" width="6" height="10" rx="3" fill="#527866"/></svg>
+    <span>nghe<span class="logo-accent">tienghan</span></span>
+  </a>
+  <nav id="nav" aria-label="Điều hướng chính"><a href="#listen">Luyện nghe</a></nav>
+</header>
+
+<main id="listen">
+  <section class="intro">
+    <div>
+      <p class="eyebrow">LUYỆN NGHE TIẾNG HÀN</p>
+      <h1>Nghe một chút, tiến bộ mỗi ngày.</h1>
+      <p class="intro-copy">Dán link YouTube để nghe và luyện chép theo từng câu.</p>
+    </div>
+    <form id="form" class="url-form">
+      <label for="url">Link video YouTube</label>
+      <div class="url-row">
+        <input id="url" type="url" required placeholder="https://www.youtube.com/watch?v=…" aria-label="Link YouTube">
+        <button class="pri">Tải video</button>
+      </div>
+    </form>
+  </section>
+
+  <p id="status" role="status" aria-live="polite" hidden></p>
+
+  <section class="workspace" aria-label="Khu vực luyện nghe">
+    <section class="video-card" aria-label="Video YouTube">
+      <div class="video-frame">
+        <div id="player"></div>
+        <div class="video-placeholder" id="vhint">
+          <span class="play-mark" aria-hidden="true">▶</span>
+          <p>Video của bạn sẽ xuất hiện ở đây</p>
+          <span>Dán link YouTube phía trên để bắt đầu</span>
+        </div>
+      </div>
+      <div class="video-meta">
+        <span class="video-label">ĐANG LUYỆN NGHE</span>
+        <p id="title">Chưa chọn video</p>
+      </div>
+    </section>
+
+    <section class="study-card" aria-label="Transcript và bài chép chính tả">
+      <div class="tabs" role="tablist" aria-label="Chọn bài luyện">
+        <button class="tab on" id="tab-tx" data-t="tx" role="tab" aria-selected="true" aria-controls="pane-tx">Transcript</button>
+        <button class="tab" id="tab-dict" data-t="dict" role="tab" aria-selected="false" aria-controls="pane-dict">Chép chính tả</button>
+      </div>
+
+      <div id="pane-tx" role="tabpanel" aria-labelledby="tab-tx">
+        <div class="panel-head">
+          <div>
+            <h2>Nội dung nghe</h2>
+            <p id="src">Phụ đề sẽ hiện ở đây</p>
+          </div>
+          <button id="align" class="quiet-button" hidden>Căn chỉnh bằng AI</button>
+        </div>
+        <ol id="cues" aria-label="Các câu trong transcript">
+          <li class="empty">Các câu trong video sẽ hiện ở đây. Chọn một câu để nghe lại.</li>
+        </ol>
+      </div>
+
+      <div id="pane-dict" role="tabpanel" aria-labelledby="tab-dict" hidden>
+        <div class="panel-head dict-heading">
+          <div>
+            <h2>Nghe và chép lại</h2>
+            <p>Luyện từng đoạn ngắn theo tốc độ của bạn.</p>
+          </div>
+        </div>
+        <div class="dict-content">
+          <div class="opts">
+            <label>Mức độ
+              <select id="d-level">
+                <option value="easy">Dễ · Gợi ý chữ đầu</option>
+                <option value="mid">Vừa · Gợi ý số từ</option>
+                <option value="hard">Khó · Không gợi ý</option>
+              </select>
+            </label>
+            <label>Số câu mỗi lượt
+              <select id="d-merge">
+                <option value="1">1 câu</option>
+                <option value="2">2 câu</option>
+                <option value="3">3 câu</option>
+              </select>
+            </label>
+            <label>Tốc độ phát
+              <select id="d-rate">
+                <option value="0.5">0.5x</option>
+                <option value="0.75">0.75x</option>
+                <option value="1" selected>1x</option>
+              </select>
+            </label>
+          </div>
+          <p id="d-empty" class="empty-note">Tải video có phụ đề để bắt đầu bài chép chính tả.</p>
+          <div id="d-box" hidden>
+            <div class="progress-row"><span id="d-pos"></span><span id="d-avg"></span></div>
+            <p id="d-hint" lang="ko"></p>
+            <button id="d-play" class="listen-button"><span aria-hidden="true">▶</span> Nghe câu này</button>
+            <textarea id="d-in" lang="ko" rows="3" placeholder="Nghe và gõ lại câu tiếng Hàn…" aria-label="Bài chép tiếng Hàn"></textarea>
+            <div class="dict-actions">
+              <button id="d-prev" class="quiet-button">← Câu trước</button>
+              <button id="d-check" class="pri">Kiểm tra</button>
+              <button id="d-show" class="quiet-button">Xem đáp án</button>
+              <button id="d-next" class="quiet-button">Câu tiếp →</button>
+            </div>
+            <div id="d-res" hidden></div>
+            <p class="note">Transcript lấy từ phụ đề video nên đôi khi có thể chưa chính xác.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </section>
+</main>
+
+<main id="soon" hidden><h2>Đang cập nhật nội dung</h2><p>Mục này chưa có. Bạn có thể quay lại phần Luyện nghe.</p></main>
+
+<dialog id="dlg">
+  <form method="dialog">
+    <h2 id="dt"></h2>
+    <p id="db"></p>
+    <label id="keyrow" hidden>Gemini API key (chỉ lưu trong trình duyệt của bạn)
+      <input id="key" type="password" autocomplete="off">
+    </label>
+    <menu><button value="no" class="quiet-button">Không dùng AI</button><button value="yes" class="pri">Đồng ý</button></menu>
+  </form>
+</dialog>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
