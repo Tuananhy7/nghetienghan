@@ -24,11 +24,17 @@ export async function loadVideo(id, errorCb) {
   onError = (c) => errorCb(YT_ERRORS[c] || `Lỗi trình phát YouTube (${c}).`);
   await loadApi();
   document.getElementById('vhint').hidden = true;
-  if (player) return player.loadVideoById(id);
+  if (player) return player.cueVideoById(id);
   return new Promise((ok) => {
     player = new YT.Player('player', {
       videoId: id, playerVars: { rel: 0, playsinline: 1 },
-      events: { onReady: () => ok(player), onError: (e) => onError(e.data) },
+      events: {
+        onReady: () => {
+          player.cueVideoById(id);
+          ok(player);
+        },
+        onError: (e) => onError(e.data),
+      },
     });
   });
 }

@@ -1,6 +1,7 @@
 """Gemini API (gói miễn phí). Chỉ được gọi sau khi người dùng xác nhận (kiểm tra ở routes)."""
 import json
 import os
+import re
 
 import httpx
 
@@ -9,6 +10,7 @@ from .transcript import clean_cues
 
 ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/{}:generateContent"
 FORMAT = 'Trả về JSON: mảng [{"start": giây, "end": giây, "text": "..."}], tăng dần theo thời gian.'
+_HANGUL = re.compile(r"[\uac00-\ud7a3]")
 
 
 def _call(parts: list, key: str | None):
@@ -18,7 +20,7 @@ def _call(parts: list, key: str | None):
     body = {"contents": [{"parts": parts}],
             "generationConfig": {"responseMimeType": "application/json", "temperature": 0}}
     try:
-        r = httpx.post(ENDPOINT.format(os.getenv("GEMINI_MODEL", "gemini-2.5-flash")),
+        r = httpx.post(ENDPOINT.format(os.getenv("GEMINI_MODEL", "gemini-3.8-flash")),
                        headers={"x-goog-api-key": key}, json=body, timeout=300)
     except httpx.HTTPError as e:
         raise AppError("AI_NETWORK", f"Không kết nối được Gemini: {str(e)[:120]}", 502)
@@ -37,11 +39,27 @@ def _video_part(vid: str) -> dict:
 
 
 def transcribe(vid: str, key: str | None) -> list[dict]:
-    prompt = ("Nghe video tiếng Hàn này và chép lại lời nói thành các câu ngắn. Không dịch, không bịa "
-              "những gì không nghe được. " + FORMAT)
+    prompt = (
+        "Nghe lời nói và lời hát trong video, rồi tạo phụ đề TIẾNG HÀN. "
+        "Nếu lời gốc đã là tiếng Hàn, chép lại chính xác bằng Hangul. "
+        "Nếu lời gốc là ngôn ngữ khác, dịch đúng ý sang tiếng Hàn tự nhiên; "
+        "không chép nguyên văn bằng ngôn ngữ gốc, không phiên âm bằng chữ Latin. "
+        "Giữ từng câu ngắn theo lời nói/hát và thời điểm thực tế; không bịa nội dung "
+        "không nghe được. Mọi trường text phải là tiếng Hàn viết bằng Hangul. "
+        + FORMAT
+    )
     cues = clean_cues(_call([_video_part(vid), {"text": prompt}], key))
     if not cues:
         raise AppError("AI_EMPTY", "AI không nghe ra lời thoại nào trong video.", 502)
+    text = "".join(cue["text"] for cue in cues)
+    letters = [char for char in text if char.isalpha()]
+    hangul_count = sum(bool(_HANGUL.fullmatch(char)) for char in letters)
+    if not letters or hangul_count / len(letters) < 0.3:
+        raise AppError(
+            "AI_NOT_KOREAN",
+            "AI không tạo được phụ đề tiếng Hàn. Hãy thử lại hoặc kiểm tra video có lời nghe được.",
+            502,
+        )
     return cues
 
 

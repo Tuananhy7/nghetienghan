@@ -9,7 +9,8 @@ const $ = (id) => document.getElementById(id);
 const SOURCES = {
   manual: 'Phụ đề do người tạo video cung cấp',
   auto: 'Phụ đề tự động của YouTube (có thể sai)',
-  ai: 'Transcript do AI (Gemini) tạo, có thể sai',
+  translated: 'Phụ đề do YouTube dịch tự động sang tiếng Hàn (có thể sai)',
+  ai: 'Phụ đề do AI (Gemini) tạo, có thể sai',
   'ai-aligned': 'Phụ đề đã được AI căn chỉnh lại thời gian',
 };
 let cur = null, serverKey = false;
@@ -27,15 +28,20 @@ function show(data) {
   status('');
 }
 
-async function offerAI() {
-  status('Video không có phụ đề tiếng Hàn (cả do người tạo lẫn tự động).', 'warn');
+async function offerAI(rateLimited = false) {
+  status(
+    rateLimited
+      ? 'YouTube đang giới hạn tải phụ đề. Bạn có thể chờ rồi thử lại hoặc chọn dùng AI.'
+      : 'Video không có phụ đề tiếng Hàn (cả do người tạo lẫn tự động).',
+    'warn',
+  );
   const ok = await confirmAI({
-    title: 'Dùng AI để tạo transcript?',
-    body: 'Link video sẽ được gửi tới Gemini API của Google (gói miễn phí, có giới hạn lượt dùng và độ dài; chỉ hoạt động với video công khai). Kết quả có thể sai chữ hoặc lệch thời gian.',
+    title: 'Dùng AI để tạo phụ đề?',
+    body: `${rateLimited ? 'YouTube đang tạm giới hạn tải phụ đề. ' : ''}AI sẽ tạo phụ đề bằng tiếng Hàn; nếu lời gốc là ngôn ngữ khác, AI sẽ dịch sang tiếng Hàn. Link video sẽ được gửi tới Gemini API của Google (gói miễn phí, có giới hạn lượt dùng và độ dài; chỉ hoạt động với video công khai). Kết quả có thể sai chữ hoặc lệch thời gian.`,
     needKey: needKey(),
   });
   if (!ok) return status('Đã hủy, không dùng AI. Bạn có thể thử video khác.', 'warn');
-  status('AI đang nghe video và tạo transcript, có thể mất vài phút…');
+  status('AI đang nghe video và tạo phụ đề, có thể mất vài phút…');
   try { show(await aiTranscribe(cur.url)); } catch (e) { status(e.message, 'err'); }
 }
 
@@ -48,18 +54,22 @@ $('form').onsubmit = async (e) => {
   status('Đang tìm phụ đề tiếng Hàn…');
   loadVideo(id, (m) => status(m, 'err')).catch((err) => status(err.message, 'err'));
   try { show(await getTranscript(url)); }
-  catch (err) { err.code === 'NO_CAPTIONS' ? await offerAI() : status(err.message, 'err'); }
+  catch (err) {
+    if (err.code === 'NO_CAPTIONS' || err.code === 'SUB_RATE_LIMITED') {
+      await offerAI(err.code === 'SUB_RATE_LIMITED');
+    } else status(err.message, 'err');
+  }
 };
 
 $('align').onclick = async () => {
   const ok = await confirmAI({
     title: 'Căn chỉnh thời gian bằng AI?',
-    body: 'Bước riêng: gửi link video và nội dung transcript hiện tại tới Gemini để căn lại thời điểm từng câu. Nội dung câu giữ nguyên; thời gian vẫn có thể lệch.',
+    body: 'Bước riêng: gửi link video và nội dung phụ đề hiện tại tới Gemini để căn lại thời điểm từng câu. Nội dung câu giữ nguyên; thời gian vẫn có thể lệch.',
     needKey: needKey(),
   });
   if (!ok) return;
   status('AI đang căn chỉnh thời gian…');
-  try { show(await aiAlign(cur.url, getCues())); } catch (e) { status(e.message + ' Transcript cũ được giữ nguyên.', 'err'); }
+  try { show(await aiAlign(cur.url, getCues())); } catch (e) { status(e.message + ' Phụ đề cũ được giữ nguyên.', 'err'); }
 };
 
 startSync(() => { const p = getPlayer(); if (p?.getCurrentTime) setActive(findActive(p.getCurrentTime())); });
