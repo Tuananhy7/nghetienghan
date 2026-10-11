@@ -27,6 +27,16 @@ Copy-Item .env.example .env
 uvicorn app.main:app --port 8000
 ```
 
+Sau khi đã cài dependencies như trên, có thể dùng các file `.bat` ở thư mục gốc:
+
+- Nhấp đúp `start-backend.bat` để bật backend. Backend chạy ẩn tại http://localhost:8000; log nằm trong `backend/backend.log` và `backend/backend-error.log`.
+- Nhấp đúp `install-backend-startup.bat` một lần để backend tự chạy mỗi khi bạn đăng nhập Windows. Thao tác này cũng bật backend ngay.
+- Nhấp đúp `remove-backend-startup.bat` để tắt tự khởi động. Backend đang chạy sẽ không bị dừng.
+
+Tích hợp tự khởi động tạo Scheduled Task cho tài khoản Windows hiện tại, không cần quyền quản trị. Cần giữ thư mục dự án ở nguyên vị trí sau khi cài.
+
+Để dừng backend đang chạy, mở **Task Manager** (`Ctrl + Shift + Esc`) → **Details**, tìm tiến trình `python.exe` có dòng lệnh `-m uvicorn app.main:app` rồi chọn **End task**. Để kiểm tra backend đang hoạt động, mở http://localhost:8000/api/health; phản hồi có `"ok": true` nghĩa là backend đã sẵn sàng.
+
 **macOS / Linux**
 
 ```bash
@@ -61,6 +71,7 @@ GitHub Pages chỉ triển khai frontend. Cần backend để tự động lấy
 
 ## Lịch sử phiên bản
 
+- **v4.1** — Thêm launcher Windows chạy backend bằng một lần nhấp, tùy chọn tự khởi động khi đăng nhập Windows và hướng dẫn dừng backend.
 - **v4.0** — Thêm AI mode tạo và căn chỉnh phụ đề trực tiếp từ frontend, dùng được khi backend tắt.
 - **v3.3** — AI tạo phụ đề tiếng Hàn; dịch sang tiếng Hàn nếu lời gốc ở ngôn ngữ khác và kiểm tra kết quả có Hangul.
 - **v3.2** — Đổi model Gemini mặc định sang `gemini-3.8-flash`.
